@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@google-cloud/local-auth": "^2.1.0",
+    "googleapis": "^107.0.0",
+    "luxon": "^3.0.3",
+    "selenium-webdriver": "^4.4.0"
+  }
+}
