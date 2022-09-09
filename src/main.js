@@ -74,6 +74,7 @@ async function registerContests(client, contests) {
           description: `${contest.url} (${contest.rated})`
         }
       })
+      console.log(`Registered ${contest.name}.`)
     } catch (e) {
       console.error("Failed to regsiter contest.", e)
     }
