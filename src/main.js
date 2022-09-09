@@ -51,6 +51,7 @@ async function registerContests(client, contests) {
   const calendarId = await getCalendarId(client)
   const events = await getEvents(client, calendarId)
   const alreadyRegisteredContests = new Set(events.map(event => event.summary))
+  const colorCode = { ABC: "9", ARC: "6", AGC: "4", OTHER: "11" }
 
   for (const contest of contests) {
     if (alreadyRegisteredContests.has(contest.name)) {
@@ -69,6 +70,7 @@ async function registerContests(client, contests) {
             dateTime: contest.end,
             timeZone: "Asia/Tokyo"
           },
+          colorId: colorCode[contest.code],
           description: `${contest.url} (${contest.rated})`
         }
       })

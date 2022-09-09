@@ -34,6 +34,16 @@ async function parseContest(tr) {
   const td1 = await tds[1].findElement(By.css('a'))
   const name = await td1.getText()
   const url = await td1.getAttribute('href')
+  let code
+  if (name.match('Beginner')) {
+    code = 'ABC'
+  } else if (name.match('Regular')) {
+    code = 'ARC'
+  } else if (name.match('Grand')) {
+    code = 'AGC'
+  } else {
+    code = 'OTHER'
+  }
 
   // contest duration
   const duration = await tds[2].getText()
@@ -43,7 +53,7 @@ async function parseContest(tr) {
   // rated?
   const rated = await tds[3].getText()
 
-  return { name, url, start, end, rated }
+  return { name, url, start, end, code, rated }
 }
 
 async function crawlAtCoder(driver) {
