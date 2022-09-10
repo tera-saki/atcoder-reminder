@@ -48,7 +48,7 @@ async function parseContest(tr) {
   // contest duration
   const duration = await tds[2].getText()
   const [hours, minutes] = duration.split(':').map(s => parseInt(s))
-  const end = DateTime.fromISO(start).plus({ hours, minutes }).toISO()
+  const end = DateTime.fromISO(start).plus({ hours, minutes }).toISO({ suppressMilliseconds: true })
 
   // rated?
   const rated = await tds[3].getText()

@@ -3,9 +3,11 @@ const { DateTime, Settings } = require('luxon')
 const { createClient } = require('./client')
 const { getContests } = require('./crawl')
 
-Settings.defaultZone = 'Asia/Tokyo'
+const tz = 'Asia/Tokyo'
+Settings.defaultZone = tz
 
 const CALENDAR_TITLE = 'AtCoder Calendar'
+const colorCode = { ABC: "9", ARC: "6", AGC: "4", OTHER: "11" }
 
 async function getCalendarId(client) {
   let pageToken = null
@@ -26,7 +28,7 @@ async function createCalendar(client) {
   const res = await client.calendars.insert({
     requestBody: {
       summary: CALENDAR_TITLE,
-      timeZone: 'Asia/Tokyo'
+      timeZone: tz
     }
   })
   return res.data.id
@@ -47,34 +49,62 @@ async function getEvents(client, calendarId) {
   return events
 }
 
+function createEventResource(contest) {
+  return {
+    summary: contest.name,
+    start: {
+      dateTime: contest.start,
+      timeZone: tz
+    },
+    end: {
+      dateTime: contest.end,
+      timeZone: tz
+    },
+    colorId: colorCode[contest.code],
+    description: `${contest.url} (${contest.rated})`
+  }
+}
+
+async function createEvent(client, calendarId, contest) {
+  await client.events.insert({
+    calendarId,
+    resource: createEventResource(contest)
+  })
+}
+
+async function updateEvent(client, calendarId, eventId, contest) {
+  await client.events.update({
+    calendarId,
+    eventId,
+    resource: createEventResource(contest)
+  })
+}
+
 async function registerContests(client, contests) {
   const calendarId = await getCalendarId(client)
   const events = await getEvents(client, calendarId)
-  const alreadyRegisteredContests = new Set(events.map(event => event.summary))
-  const colorCode = { ABC: "9", ARC: "6", AGC: "4", OTHER: "11" }
+  const registeredEvents = {}
+  for (const event of events) {
+    registeredEvents[event.summary] = {
+      id: event.id,
+      start: event.start.dateTime,
+      end: event.end.dateTime
+    }
+  }
 
   for (const contest of contests) {
-    if (alreadyRegisteredContests.has(contest.name)) {
-      continue
-    }
     try {
-      await client.events.insert({
-        calendarId,
-        resource: {
-          summary: contest.name,
-          start: {
-            dateTime: contest.start,
-            timeZone: "Asia/Tokyo"
-          },
-          end: {
-            dateTime: contest.end,
-            timeZone: "Asia/Tokyo"
-          },
-          colorId: colorCode[contest.code],
-          description: `${contest.url} (${contest.rated})`
+      const regEvent = registeredEvents[contest.name]
+      if (regEvent) {
+        if (regEvent.start === contest.start && regEvent.end === contest.end) {
+          continue
         }
-      })
-      console.log(`Registered ${contest.name}.`)
+        await updateEvent(client, calendarId, regEvent.id, contest)
+        console.log(`Schedule of ${contest.name} is updated.`)
+      } else {
+        await createEvent(client, calendarId, contest)
+        console.log(`Registered ${contest.name}.`)
+      }
     } catch (e) {
       console.error("Failed to regsiter contest.", e)
     }
